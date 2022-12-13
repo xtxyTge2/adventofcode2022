@@ -1,6 +1,5 @@
 import numpy as np
 import string
-import copy
 import sys
 
 

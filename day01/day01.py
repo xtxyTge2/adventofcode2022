@@ -1,7 +1,7 @@
 def calculate_calories_of_all_elves():
     calories = []
     current_calories = 0
-    with open("day01.txt") as f:
+    with open("2022_python/day01/day01.txt") as f:
         for line in f:
             if len(line.strip()) == 0: # empty line check, includes whitespaces!
                 calories.append(current_calories)
@@ -13,10 +13,12 @@ def calculate_calories_of_all_elves():
     return calories
     
 def first_part():
+    "Result of the first part is: 74198"
     calories = calculate_calories_of_all_elves()
     return max(calories)
 
 def second_part():
+    "Result of the second part is: 209914"
     calories = calculate_calories_of_all_elves()
     return sum(sorted(calories, reverse=True)[:3])
 

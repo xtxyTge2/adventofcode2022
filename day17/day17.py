@@ -1,7 +1,9 @@
 import numpy as np
 
+
 def parse_input(input_file):
     return input_file.read()
+
 
 class Grid():
     def __init__(self):
@@ -9,6 +11,10 @@ class Grid():
         self.grid[-1, :] = 2
 
         self.current_block_positions = []
+
+    def _remove_empty_rows_from_top(self):
+        height = self.get_height()
+        self.grid = self.grid[:height + 1]
 
     def get_height(self):
         for i in range(self.grid.shape[0]):
@@ -20,6 +26,8 @@ class Grid():
         return self.grid.shape[0] - 1
 
     def _spawn_new_block(self, iteration):
+        self._remove_empty_rows_from_top()
+
         height = self.get_height()
         empty_row = [[0, 0, 0, 0, 0, 0, 0]]
         for i in range(3):
@@ -50,7 +58,7 @@ class Grid():
             block_positions.append((height - 2, 4))
             block_positions.append((height - 2, 3))
             block_positions.append((height - 2, 2))
-        elif iteration % 5 == 3:        
+        elif iteration % 5 == 3:
             block_height = 4
             height += block_height
             block_positions.append((height, 2))
@@ -71,7 +79,6 @@ class Grid():
         self.current_block_positions = block_positions
         self._set_current_block_value(value=1)
 
-
     def _is_valid_block_position(self, block_position):
         x, y = block_position[0], block_position[1]
         if x < 0 or y < 0 or x > self.grid.shape[0] - 1 or y > self.grid.shape[1] - 1:
@@ -83,11 +90,14 @@ class Grid():
     def _set_new_block_positions(self, move):
         new_block_positions = []
         if move == "v":
-            new_block_positions = [(x - 1, y) for  x, y in self.current_block_positions]
+            new_block_positions = [(x - 1, y)
+                                   for x, y in self.current_block_positions]
         elif move == "<":
-            new_block_positions = [(x, y - 1) for  x, y in self.current_block_positions]
+            new_block_positions = [(x, y - 1)
+                                   for x, y in self.current_block_positions]
         elif move == ">":
-            new_block_positions = [(x, y + 1) for  x, y in self.current_block_positions]
+            new_block_positions = [(x, y + 1)
+                                   for x, y in self.current_block_positions]
 
         block_moved = True
         for position in new_block_positions:
@@ -98,13 +108,14 @@ class Grid():
             # update block positions
             self.current_block_positions = new_block_positions
         return block_moved
-        
+
     def _set_grid_values(self, positions, value):
         for b in positions:
             self.grid[b] = value
 
     def _set_current_block_value(self, value):
-        self._set_grid_values(positions=self.current_block_positions, value=value)
+        self._set_grid_values(
+            positions=self.current_block_positions, value=value)
 
     def _turn_current_block_to_stone(self):
         self._set_current_block_value(value=2)
@@ -112,21 +123,18 @@ class Grid():
     def _move_block(self, move):
         old_block_positions = self.current_block_positions.copy()
         block_moved = self._set_new_block_positions(move)
-       
+
         if block_moved:
-            self._set_grid_values(positions=old_block_positions, value=0) # remove old block from grid
-            self._set_grid_values(positions=self.current_block_positions, value=1) # add new block to grid
+            # remove old block from grid
+            self._set_grid_values(positions=old_block_positions, value=0)
+            # add new block to grid
+            self._set_grid_values(
+                positions=self.current_block_positions, value=1)
         turned_to_stone = False
         if not block_moved and move == "v":
             turned_to_stone = True
             self._turn_current_block_to_stone()
-            
-        self._remove_empty_rows_from_top()
         return turned_to_stone
-
-    def _remove_empty_rows_from_top(self):
-        height = self.get_height()
-        self.grid = self.grid[:height + 1]
 
     def _get_full_rows_indices(self):
         full_row = np.array([2, 2, 2, 2, 2, 2, 2])
@@ -152,11 +160,10 @@ class Grid():
             repr_string += "\n"
         return repr_string
 
-
     def run_simulation(self, total_number_of_blocks, moves):
         current_number_of_blocks = 0
         move_index = 0
-        while(current_number_of_blocks <= total_number_of_blocks):
+        while (current_number_of_blocks <= total_number_of_blocks):
             self._spawn_new_block(current_number_of_blocks)
             is_falling = False
             turned_to_stone = False
@@ -171,10 +178,12 @@ class Grid():
                 is_falling = not is_falling
             current_number_of_blocks += 1
 
+
 def first_part(moves):
     grid = Grid()
     grid.run_simulation(total_number_of_blocks=2021, moves=moves)
     return grid.get_height()
+
 
 def second_part(data):
     return None

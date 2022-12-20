@@ -12,8 +12,6 @@ def spawn_new_block(grid, iteration):
 
     block_positions = []
     if iteration % 5 == 0:
-        # block: 
-        #       S###
         block_height = 1
         height += block_height
         block_positions.append((height, 2))
@@ -28,11 +26,6 @@ def spawn_new_block(grid, iteration):
         block_positions.append((height - 1, 3))
         block_positions.append((height - 1, 4))
         block_positions.append((height - 2, 3))
-        # block:  
-        #         .S.
-        #         ###
-        #         .#.
-    
     elif iteration % 5 == 2:
         block_height = 3
         height += block_height
@@ -41,27 +34,14 @@ def spawn_new_block(grid, iteration):
         block_positions.append((height - 2, 4))
         block_positions.append((height - 2, 3))
         block_positions.append((height - 2, 2))
-        # block: 
-        #       ..S
-        #       ..#
-        #       ### 
-    elif iteration % 5 == 3:
+    elif iteration % 5 == 3:        
         block_height = 4
         height += block_height
         block_positions.append((height, 2))
         block_positions.append((height - 1, 2))
         block_positions.append((height - 2, 2))
         block_positions.append((height - 3, 2))
-        
-        # block:
-        #       S
-        #       #
-        #       #
-        #       #
     elif iteration % 5 == 4:
-        # block:
-        #       S#
-        #       ##
         block_height = 2
         height += block_height
         block_positions.append((height, 2))
@@ -77,23 +57,27 @@ def spawn_new_block(grid, iteration):
     return (grid, block_positions)
 
 
+def is_valid_block_position(grid, block_position):
+    x, y = block_position[0], block_position[1]
+    if x < 0 or y < 0 or x > grid.shape[0] - 1 or y > grid.shape[1] - 1:
+        return False
+    if grid[block_position] == 2:
+        return False
+    return True
+
+
 def get_new_block_positions(grid, block_positions, move):
-    block_moved = True
     new_block_positions = []
-    for b in block_positions:
-        if move == "v":
-            new_position = (b[0] - 1, b[1])
-        elif move == "<":
-            new_position = (b[0], b[1] - 1)
-        elif move == ">":
-            new_position = (b[0], b[1] + 1)
-        x, y = new_position[0], new_position[1]
-        new_block_positions.append(new_position)
-        
-        if x < 0 or y < 0 or x > grid.shape[0] - 1 or y > grid.shape[1] - 1:
-            block_moved = False
-            break
-        if grid[new_position] == 2:
+    if move == "v":
+        new_block_positions = [(x - 1, y) for  x, y in block_positions]
+    elif move == "<":
+        new_block_positions = [(x, y - 1) for  x, y in block_positions]
+    elif move == ">":
+        new_block_positions = [(x, y + 1) for  x, y in block_positions]
+
+    block_moved = True
+    for position in new_block_positions:
+        if not is_valid_block_position(grid, position):
             block_moved = False
             break
     if not block_moved:
@@ -117,10 +101,10 @@ def move_block(grid, block_positions, move):
     turned_to_stone = False
 
     if block_moved:
-        update_block_positions(grid, block_positions, new_block_positions)
+        grid = update_block_positions(grid, block_positions, new_block_positions)
     if not block_moved and move == "v":
         turned_to_stone = True
-        turn_to_stone(grid, new_block_positions)
+        grid = turn_to_stone(grid, new_block_positions)
         
     grid = cull_grid_down(grid)
     return (turned_to_stone, grid, new_block_positions)
@@ -131,14 +115,6 @@ def cull_grid_down(grid):
     return grid
 
 def get_height(grid):
-    for i in range(grid.shape[0]):
-        row_idx = grid.shape[0] - 1 - i
-        row = grid[row_idx, :]
-        for v in row:
-            if v > 0:
-                return row_idx
-    #return np.argmax(grid > )
-def get_height_old(grid):
     for i in range(grid.shape[0]):
         row_idx = grid.shape[0] - 1 - i
         row = grid[row_idx, :]

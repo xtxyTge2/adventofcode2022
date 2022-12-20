@@ -4,11 +4,12 @@ import numpy as np
 def parse_input(input_file):
     return input_file.read()
 
+
 class Grid():
     def __init__(self, moves):
         self.grid = np.full((1, 7), 0, int)
         self.grid[-1, :] = 2
-        
+
         self.current_block_positions = []
 
         self.moves = moves
@@ -170,17 +171,27 @@ class Grid():
             repr_string += "\n"
         return repr_string
 
+    def playback_history(self, history):
+        for start, end in history:
+            start_grid = start["current_grid_data"]
+            pretty_print(start_grid)
+
     def run_simulation(self, total_number_of_blocks):
         current_number_of_blocks = 0
-        move_index = 0
-        current_grid_state_record = None
-        while (current_number_of_blocks <= total_number_of_blocks):
-            grid_copy = np.copy(self.grid)
 
+        history = []
+        is_recording = False
+        while (current_number_of_blocks <= total_number_of_blocks):
+            end_grid_state = self._get_current_grid_state()
+            if is_recording:  # only save record if we are recording
+                history.append([start_grid_state, end_grid_state])
+                is_recording = False
             self._spawn_new_block(current_number_of_blocks)
 
-            history_record = []
-            moves_record = []
+            start_grid_state = self._get_current_grid_state()
+            is_recording = True
+            moves_history = []
+
             is_falling = False
             turned_to_stone = False
             while not turned_to_stone:
@@ -188,9 +199,20 @@ class Grid():
                     self._set_next_move("v")
                 else:
                     self._set_next_move()
+
+                moves_history.append(self.current_move)
                 turned_to_stone = self._move_block()
+
                 is_falling = not is_falling
             current_number_of_blocks += 1
+
+        #self.playback_history(history)
+
+    def _get_current_grid_state(self):
+        state = {}
+        state["current_height"] = self.get_height()
+        state["current_grid_data"] = self.grid.copy()
+        return state
 
 
 def first_part(moves):
@@ -203,7 +225,24 @@ def second_part(data):
     return None
 
 
-input_file_name = "2022_python/day17/day17.txt"
+def pretty_print(grid):
+    grid_copy = np.flipud(grid.copy())
+    repr_string = ""
+    for i in range(grid_copy.shape[0]):
+        for j in range(grid_copy.shape[1]):
+            v = grid_copy[i, j]
+            if v == 2:
+                repr_string += "#"
+            if v == 0:
+                repr_string += "."
+            if v == 1:
+                repr_string += "@"
+        repr_string += "\n"
+    print(repr_string)
+
+
+
+input_file_name = "2022_python/day17/day17_test.txt"
 
 
 """

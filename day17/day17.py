@@ -15,12 +15,12 @@ class Grid():
         self.moves = moves
         self.move_index = 0
 
-    def _set_next_move(self, move=None):
-        if move is None:
+    def _set_next_move(self, is_falling=False):
+        if is_falling:
+            self.current_move = "v"
+        else:
             self.current_move = self.moves[self.move_index % len(self.moves)]
             self.move_index += 1
-        else:
-            self.current_move = "v"
 
     def _remove_empty_rows_from_top(self):
         height = self.get_height()
@@ -177,11 +177,9 @@ class Grid():
             pretty_print(start_grid)
 
     def run_simulation(self, total_number_of_blocks):
-        current_number_of_blocks = 0
-
         history = []
         is_recording = False
-        while (current_number_of_blocks <= total_number_of_blocks):
+        for current_number_of_blocks in range(total_number_of_blocks):
             end_grid_state = self._get_current_grid_state()
             if is_recording:  # only save record if we are recording
                 history.append([start_grid_state, end_grid_state])
@@ -195,16 +193,11 @@ class Grid():
             is_falling = False
             turned_to_stone = False
             while not turned_to_stone:
-                if is_falling:
-                    self._set_next_move("v")
-                else:
-                    self._set_next_move()
+                self._set_next_move(is_falling)
+                is_falling = not is_falling
 
                 moves_history.append(self.current_move)
                 turned_to_stone = self._move_block()
-
-                is_falling = not is_falling
-            current_number_of_blocks += 1
 
         #self.playback_history(history)
 
@@ -217,7 +210,7 @@ class Grid():
 
 def first_part(moves):
     grid = Grid(moves)
-    grid.run_simulation(total_number_of_blocks=2021)
+    grid.run_simulation(total_number_of_blocks=2022)
     return grid.get_height()
 
 

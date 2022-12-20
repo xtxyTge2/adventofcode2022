@@ -6,14 +6,15 @@ def parse_input(input_file):
 
 
 class Grid():
-    def __init__(self, moves):
+    def __init__(self, moves, move_start_index=0, start_block_offset=0):
         self.grid = np.full((1, 7), 0, int)
         self.grid[-1, :] = 2
 
         self.current_block_positions = []
 
         self.moves = moves
-        self.move_index = 0
+        self.move_index = move_start_index
+        self.start_block_offset = start_block_offset
 
     def _set_next_move(self, is_falling=False):
         if is_falling:
@@ -150,7 +151,7 @@ class Grid():
     def _get_full_rows_indices(self):
         full_row = np.array([2, 2, 2, 2, 2, 2, 2])
         full_rows_indices = []
-        for i in reversed(range(1, self.grid.shape[0])):
+        for i in reversed(range(self.grid.shape[0])):
             row = self.grid[i, :]
             if np.array_equal(row, full_row):
                 full_rows_indices.append(i)
@@ -171,25 +172,64 @@ class Grid():
             repr_string += "\n"
         return repr_string
 
-    def playback_history(self, history):
-        for start, end in history:
-            start_grid = start["current_grid_data"]
-            pretty_print(start_grid)
+    def detect_cycle(self):
+        move_start_index = 0
+        num_moves = 0
+        previous_full_row = 0
+        num_blocks = 0
+        history = dict()
+        total_number_of_blocks = 2022
+        for current_number_of_blocks in range(total_number_of_blocks):
+            self._spawn_new_block(current_number_of_blocks)
+            num_blocks += 1
+            full_rows = self._get_full_rows_indices()
+            current_full_row = full_rows[0]
+            if current_full_row != previous_full_row:
+                height_difference = current_full_row - previous_full_row
+
+                current_entry = dict()
+                current_entry["start_row"] = previous_full_row
+                current_entry["end_row"] = current_full_row
+                current_entry["move_start_index"] = move_start_index
+                current_entry["num_moves"] = num_moves
+                current_entry["num_blocks"] = num_blocks
+                if height_difference not in history.keys():
+                    history[height_difference] = (current_entry, False)
+
+                    move_start_index = self.move_index
+                    num_moves = 0
+                    previous_full_row = current_full_row
+                    num_blocks = 0
+                else:
+                    other_entry, checked = history[height_difference]
+                    if not checked:
+                        is_cycle = self.check_if_equal(current_entry, other_entry)
+                        if is_cycle:
+                            cycle_height = height_difference
+                            number_of_cycles = total_number_of_blocks // num_blocks
+                            rest_cycles = total_number_of_blocks % num_blocks
+                            start_block_index = (current_number_of_blocks + 1) % 5
+                            move_start_index = (current_entry["move_start_index"]  + 1) % len(self.moves)
+                            return (num_blocks, cycle_height, number_of_cycles, rest_cycles, start_block_index, move_start_index)
+                        history[height_difference] = (other_entry, True)
+            if current_number_of_blocks % 100 == 0:
+                print("Iteration: {}".format(current_number_of_blocks))
+                print(self.grid.shape)
+            is_falling = False
+            turned_to_stone = False
+            while not turned_to_stone:
+                self._set_next_move(is_falling)
+                is_falling = not is_falling
+
+                num_moves += 1
+                turned_to_stone = self._move_block()
+        #self.playback_history(history)
 
     def run_simulation(self, total_number_of_blocks):
-        history = []
-        is_recording = False
+        moves_history = []
+        self.move_index = self.move_index
         for current_number_of_blocks in range(total_number_of_blocks):
-            end_grid_state = self._get_current_grid_state()
-            if is_recording:  # only save record if we are recording
-                history.append([start_grid_state, end_grid_state])
-                is_recording = False
-            self._spawn_new_block(current_number_of_blocks)
-
-            start_grid_state = self._get_current_grid_state()
-            is_recording = True
-            moves_history = []
-
+            self._spawn_new_block(self.start_block_offset + current_number_of_blocks)
             is_falling = False
             turned_to_stone = False
             while not turned_to_stone:
@@ -199,14 +239,18 @@ class Grid():
                 moves_history.append(self.current_move)
                 turned_to_stone = self._move_block()
 
-        #self.playback_history(history)
+    def check_if_equal(self, entry, other):
+        entry_start, entry_end = entry["start_row"], entry["end_row"]
+        other_start, other_end = other["start_row"], other["end_row"]
 
-    def _get_current_grid_state(self):
-        state = {}
-        state["current_height"] = self.get_height()
-        state["current_grid_data"] = self.grid.copy()
-        return state
+        entry_grid = self.grid[entry_start:entry_end]
+        other_grid = self.grid[other_start:other_end]
 
+        if entry["move_start_index"] % len(self.moves) == other["move_start_index"] % len(self.moves) and entry["num_moves"] == other["num_moves"]:
+            return np.array_equal(entry_grid, other_grid)
+        else:
+            return False
+    
 
 def first_part(moves):
     grid = Grid(moves)
@@ -214,8 +258,15 @@ def first_part(moves):
     return grid.get_height()
 
 
-def second_part(data):
-    return None
+def second_part(moves):
+    grid = Grid(moves)
+    num_blocks, cycle_height, number_of_cycles, rest_cycles, start_block_index, move_start_index = grid.detect_cycle()
+
+    rest_grid = Grid(moves, move_start_index=move_start_index, start_block_offset=start_block_index)
+    rest_grid.run_simulation(rest_cycles)
+    total_height = number_of_cycles * cycle_height + rest_grid.get_height()
+
+    return total_height
 
 
 def pretty_print(grid):
@@ -235,7 +286,7 @@ def pretty_print(grid):
 
 
 
-input_file_name = "2022_python/day17/day17_test.txt"
+input_file_name = "2022_python/day17/day17.txt"
 
 
 """

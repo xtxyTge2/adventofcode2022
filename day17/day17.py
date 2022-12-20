@@ -4,13 +4,22 @@ import numpy as np
 def parse_input(input_file):
     return input_file.read()
 
-
 class Grid():
-    def __init__(self):
+    def __init__(self, moves):
         self.grid = np.full((1, 7), 0, int)
         self.grid[-1, :] = 2
-
+        
         self.current_block_positions = []
+
+        self.moves = moves
+        self.move_index = 0
+
+    def _set_next_move(self, move=None):
+        if move is None:
+            self.current_move = self.moves[self.move_index % len(self.moves)]
+            self.move_index += 1
+        else:
+            self.current_move = "v"
 
     def _remove_empty_rows_from_top(self):
         height = self.get_height()
@@ -26,8 +35,6 @@ class Grid():
         return self.grid.shape[0] - 1
 
     def _spawn_new_block(self, iteration):
-        self._remove_empty_rows_from_top()
-
         height = self.get_height()
         empty_row = [[0, 0, 0, 0, 0, 0, 0]]
         for i in range(3):
@@ -87,7 +94,8 @@ class Grid():
             return False
         return True
 
-    def _set_new_block_positions(self, move):
+    def _set_new_block_positions(self):
+        move = self.current_move
         new_block_positions = []
         if move == "v":
             new_block_positions = [(x - 1, y)
@@ -120,9 +128,10 @@ class Grid():
     def _turn_current_block_to_stone(self):
         self._set_current_block_value(value=2)
 
-    def _move_block(self, move):
+    def _move_block(self):
+        move = self.current_move
         old_block_positions = self.current_block_positions.copy()
-        block_moved = self._set_new_block_positions(move)
+        block_moved = self._set_new_block_positions()
 
         if block_moved:
             # remove old block from grid
@@ -134,6 +143,7 @@ class Grid():
         if not block_moved and move == "v":
             turned_to_stone = True
             self._turn_current_block_to_stone()
+        self._remove_empty_rows_from_top()
         return turned_to_stone
 
     def _get_full_rows_indices(self):
@@ -160,28 +170,32 @@ class Grid():
             repr_string += "\n"
         return repr_string
 
-    def run_simulation(self, total_number_of_blocks, moves):
+    def run_simulation(self, total_number_of_blocks):
         current_number_of_blocks = 0
         move_index = 0
+        current_grid_state_record = None
         while (current_number_of_blocks <= total_number_of_blocks):
+            grid_copy = np.copy(self.grid)
+
             self._spawn_new_block(current_number_of_blocks)
+
+            history_record = []
+            moves_record = []
             is_falling = False
             turned_to_stone = False
             while not turned_to_stone:
                 if is_falling:
-                    turned_to_stone = self._move_block("v")
+                    self._set_next_move("v")
                 else:
-                    move = moves[move_index % len(moves)]
-                    move_index += 1
-
-                    turned_to_stone = self._move_block(move)
+                    self._set_next_move()
+                turned_to_stone = self._move_block()
                 is_falling = not is_falling
             current_number_of_blocks += 1
 
 
 def first_part(moves):
-    grid = Grid()
-    grid.run_simulation(total_number_of_blocks=2021, moves=moves)
+    grid = Grid(moves)
+    grid.run_simulation(total_number_of_blocks=2021)
     return grid.get_height()
 
 
